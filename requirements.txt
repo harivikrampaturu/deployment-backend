@@ -1,7 +1,8 @@
-Flask==2.0.1
+Flask==2.2.5
+Werkzeug==2.2.3
 Flask-CORS==3.0.10
-Flask-SocketIO==5.1.1
-python-socketio==5.4.0
+Flask-SocketIO==5.3.4
+python-socketio==5.8.0
 gunicorn==20.1.0
 gevent==22.10.2
 gevent-websocket==0.10.1 

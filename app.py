@@ -8,8 +8,8 @@ import os
 from uuid import uuid4
 from datetime import datetime, timezone
 from flask_socketio import SocketIO, emit, join_room, leave_room
-import requests
-from typing import List, Dict, Any
+""" import requests
+from typing import List, Dict, Any """
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'default-secret-key')
@@ -484,7 +484,7 @@ def manage_resource(resource_id):
             print(f"Error deleting resource: {str(e)}")  # Debug log
             return jsonify({'error': 'Failed to delete resource'}), 500
 
-@app.route('/api/projects/import-tpm', methods=['POST'])
+""" @app.route('/api/projects/import-tpm', methods=['POST'])
 def import_tpm_projects():
     try:
         # TODO: Replace with your actual TPM API endpoint and credentials
@@ -551,7 +551,7 @@ def import_tpm_projects():
         }), 500
 
 def map_tpm_phase(tpm_status: str) -> str:
-    """Map TPM status to our project phases"""
+    ""Map TPM status to our project phases""
     status_mapping = {
         'NOT_STARTED': 'PLANNING',
         'IN_PROGRESS': 'IN_PROGRESS',
@@ -559,7 +559,7 @@ def map_tpm_phase(tpm_status: str) -> str:
         'COMPLETED': 'COMPLETED',
         # Add more mappings as needed
     }
-    return status_mapping.get(tpm_status, 'PLANNING')
+    return status_mapping.get(tpm_status, 'PLANNING') """
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 4000))

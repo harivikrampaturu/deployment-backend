@@ -113,8 +113,8 @@ allocations_db = [
     {'id': 'a25', 'resourceId': 'r21', 'projectId': 'p8', 'percentage': 60, 'startDate': '2025-02-15', 'endDate': '2025-08-15'},
     
     # Project 9 allocations - increased percentages
-    {'id': 'a26', 'resourceId': 'r8', 'projectId': 'p9', 'percentage': 45, 'startDate': '2025-05-01', 'endDate': '2025-10-31'},
-    {'id': 'a27', 'resourceId': 'r23', 'projectId': 'p9', 'percentage': 50, 'startDate': '2025-05-01', 'endDate': '2025-10-31'},
+    {'id': 'a26', 'resourceId': 'r8', 'projectId': 'p9', 'percentage': 30, 'startDate': '2025-05-01', 'endDate': '2025-10-31'},
+    {'id': 'a27', 'resourceId': 'r23', 'projectId': 'p9', 'percentage': 20, 'startDate': '2025-05-01', 'endDate': '2025-10-31'},
     {'id': 'a28', 'resourceId': 'r17', 'projectId': 'p9', 'percentage': 65, 'startDate': '2025-05-01', 'endDate': '2025-10-31'},
     
     # Project 10 allocations - increased percentages
@@ -207,6 +207,7 @@ def resources():
             resource_allocations = [
                 {
                     **alloc,
+                    'allocation': alloc['percentage'],  # Add allocation field for frontend
                     'projectDetails': next(
                         (p for p in projects_db if p['id'] == alloc['projectId']),
                         None

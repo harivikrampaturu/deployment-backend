@@ -8,6 +8,8 @@ import os
 from uuid import uuid4
 from datetime import datetime, timezone
 from flask_socketio import SocketIO, emit, join_room, leave_room
+import requests
+from typing import List, Dict, Any
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'default-secret-key')
@@ -446,6 +448,117 @@ def get_project_report(project_id):
     }
     
     return jsonify(report)
+
+@app.route('/resources/<resource_id>', methods=['PUT', 'DELETE'])
+def manage_resource(resource_id):
+    if request.method == 'PUT':
+        try:
+            resource = request.get_json()
+            for i, r in enumerate(resources_db):
+                if r['id'] == resource_id:
+                    # Keep existing fields if not provided in update
+                    updated_resource = {
+                        **r,  # Keep existing data
+                        **resource,  # Update with new data
+                        'updatedAt': datetime.now(timezone.utc).isoformat()
+                    }
+                    resources_db[i] = updated_resource
+                    return jsonify(updated_resource)
+            return jsonify({'error': 'Resource not found'}), 404
+        except Exception as e:
+            print(f"Error updating resource: {str(e)}")  # Debug log
+            return jsonify({'error': 'Failed to update resource'}), 500
+
+    elif request.method == 'DELETE':
+        try:
+            # Remove resource allocations first
+            allocations_db[:] = [a for a in allocations_db if a['resourceId'] != resource_id]
+            # Then remove the resource
+            resource = next((r for r in resources_db if r['id'] == resource_id), None)
+            if resource:
+                resources_db.remove(resource)
+                return jsonify({'message': 'Resource deleted'}), 200
+            return jsonify({'error': 'Resource not found'}), 404
+        except Exception as e:
+            print(f"Error deleting resource: {str(e)}")  # Debug log
+            return jsonify({'error': 'Failed to delete resource'}), 500
+
+@app.route('/api/projects/import-tpm', methods=['POST'])
+def import_tpm_projects():
+    try:
+        # TODO: Replace with your actual TPM API endpoint and credentials
+        TPM_API_ENDPOINT = os.environ.get('TPM_API_ENDPOINT', 'https://tpm-api.example.com')
+        TPM_API_KEY = os.environ.get('TPM_API_KEY', '')
+
+        # Fetch projects from TPM
+        response = requests.get(
+            f"{TPM_API_ENDPOINT}/projects",
+            headers={"Authorization": f"Bearer {TPM_API_KEY}"}
+        )
+        
+        if not response.ok:
+            return jsonify({
+                'error': 'Failed to fetch data from TPM',
+                'message': response.text
+            }), response.status_code
+
+        tpm_projects = response.json()
+        imported_projects: List[Dict[str, Any]] = []
+
+        for tpm_project in tpm_projects:
+            # Transform TPM project data to our format
+            new_project = {
+                'id': str(uuid4()),
+                'name': tpm_project.get('title', ''),
+                'phase': map_tpm_phase(tpm_project.get('status', '')),
+                'startDate': tpm_project.get('startDate', ''),
+                'endDate': tpm_project.get('endDate', ''),
+                'description': tpm_project.get('description', ''),
+                'createdAt': datetime.now(timezone.utc).isoformat(),
+                'updatedAt': datetime.now(timezone.utc).isoformat()
+            }
+
+            # Check if project already exists (by name)
+            existing_project = next(
+                (p for p in projects_db if p['name'] == new_project['name']),
+                None
+            )
+
+            if existing_project:
+                # Update existing project
+                existing_project.update(new_project)
+                imported_projects.append(existing_project)
+            else:
+                # Add new project
+                projects_db.append(new_project)
+                imported_projects.append(new_project)
+
+        return jsonify({
+            'message': f'Successfully imported {len(imported_projects)} projects',
+            'projects': imported_projects
+        })
+
+    except requests.RequestException as e:
+        return jsonify({
+            'error': 'Failed to connect to TPM service',
+            'message': str(e)
+        }), 503
+    except Exception as e:
+        return jsonify({
+            'error': 'Internal server error',
+            'message': str(e)
+        }), 500
+
+def map_tpm_phase(tpm_status: str) -> str:
+    """Map TPM status to our project phases"""
+    status_mapping = {
+        'NOT_STARTED': 'PLANNING',
+        'IN_PROGRESS': 'IN_PROGRESS',
+        'ON_HOLD': 'ON_HOLD',
+        'COMPLETED': 'COMPLETED',
+        # Add more mappings as needed
+    }
+    return status_mapping.get(tpm_status, 'PLANNING')
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 4000))
